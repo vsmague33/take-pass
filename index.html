@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1712">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Take/Pass</title>
+<meta name="apple-mobile-web-app-title" content="Take/Pass">
+<style>
+  :root{
+    --bg:#1b1712;
+    --surface:#242019;
+    --surface-2:#2c261d;
+    --edge:#3d3527;
+    --ink:#efe7d6;
+    --ink-dim:#a89c85;
+    --brass:#c9a227;
+    --brass-dim:#8a7325;
+    --doubler:#c9a227;
+    --taker:#7fb8d8;
+    --take-bg:#1e3b2b;
+    --take-ink:#8fe6b3;
+    --pass-bg:#432722;
+    --pass-ink:#f2988a;
+    --edge-bg:#40371f;
+    --edge-ink:#eecb6a;
+    --font-display: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Roboto Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:var(--font-body);}
+  body{
+    padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+    min-height:100vh;
+  }
+  .wrap{max-width:480px; margin:0 auto;}
+
+  header{margin-bottom:14px;}
+  h1{
+    font-family:var(--font-display); font-weight:600; font-size:22px; line-height:1.1;
+    margin:0; color:var(--ink);
+  }
+  .formula{
+    font-family:var(--font-mono); font-size:10px; color:var(--ink-dim);
+    line-height:1.55; border-left:2px solid var(--brass-dim); padding-left:10px;
+    margin:16px 0 0;
+  }
+  .formula b{color:var(--ink);}
+
+  .top-row{display:flex; gap:8px; align-items:stretch; margin-bottom:14px;}
+  .players{display:flex; flex-direction:column; gap:8px; flex:1; min-width:0;}
+  .player-card{
+    flex:1; background:var(--surface); border:1px solid var(--edge); border-radius:14px; padding:12px 14px;
+    border-top:3px solid var(--role-color);
+  }
+  .player-card.doubler{--role-color:var(--doubler);}
+  .player-card.taker{--role-color:var(--taker);}
+  .player-header{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; flex-wrap:wrap; gap:4px;
+  }
+  .player-card h2{
+    font-family:var(--font-mono); font-size:12.5px; letter-spacing:.03em; text-transform:none;
+    margin:0; font-weight:700; color:var(--role-color);
+  }
+
+  .gam-label{
+    font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim);
+  }
+  .gam-label b{font-size:19px; font-weight:700; color:var(--ink);}
+
+  input.gam-slider{
+    -webkit-appearance:none; appearance:none; display:block;
+    width:100%; height:32px; margin:0; background:transparent;
+  }
+  input.gam-slider:focus{outline:none;}
+  input.gam-slider::-webkit-slider-runnable-track{
+    height:6px; border-radius:3px; border:none;
+    box-shadow:inset 0 0 0 1px var(--edge);
+    background:linear-gradient(to right,
+      var(--role-color) var(--fill, 13px),
+      var(--surface-2) var(--fill, 13px));
+  }
+  input.gam-slider::-webkit-slider-thumb{
+    -webkit-appearance:none; box-sizing:border-box;
+    width:26px; height:26px; margin-top:-10px; border-radius:50%;
+    background:var(--role-color); border:3px solid var(--bg);
+    box-shadow:0 0 0 1px var(--brass-dim);
+  }
+  input.gam-slider::-moz-range-track{
+    height:6px; border-radius:3px; border:none;
+    box-shadow:inset 0 0 0 1px var(--edge);
+    background:linear-gradient(to right,
+      var(--role-color) var(--fill, 13px),
+      var(--surface-2) var(--fill, 13px));
+  }
+  input.gam-slider::-moz-range-thumb{
+    box-sizing:border-box; width:26px; height:26px; border-radius:50%;
+    background:var(--role-color); border:3px solid var(--bg);
+    box-shadow:0 0 0 1px var(--brass-dim);
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--edge); border-radius:14px;
+    padding:14px 16px; margin-bottom:14px;
+  }
+  .card h2{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-dim); margin:0 0 14px; font-weight:600;
+  }
+  .card .sub{font-size:11px; color:var(--ink-dim); margin:0 0 14px;}
+  .h2-sub{text-transform:none; font-size:9px; letter-spacing:0; font-weight:400; opacity:.8;}
+  .card-matrix{padding-left:6px; padding-right:10px;}
+  .cube-card{border-top:1px solid var(--edge);}
+
+  .cube-card{margin-bottom:0; width:84px; flex:none; padding:12px 6px;}
+  .cube-content{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; text-align:center;}
+  .cube-title h2{margin:0; font-size:11px; letter-spacing:.04em; text-transform:none; white-space:nowrap;}
+  .cube-row{display:flex; flex-direction:column; gap:12px;}
+  .cube-face{width:50px; height:50px; font-size:22px; border-radius:9px;}
+  .cube-face{
+    width:52px; height:52px; border-radius:9px;
+    background:linear-gradient(160deg, #f4ecd8, #dcd0b0);
+    border:2px solid #8a7d55;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-weight:700; font-size:22px; color:#2a2410;
+    font-variant-numeric:tabular-nums lining-nums; line-height:1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -4px 8px rgba(0,0,0,.15), 0 3px 8px rgba(0,0,0,.35);
+    transform:scale(.92); opacity:.55;
+    transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  }
+  .cube-face.active{
+    transform:scale(1); opacity:1;
+    border-color:var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -4px 8px rgba(0,0,0,.15), 0 0 0 3px rgba(201,162,39,.35), 0 4px 10px rgba(0,0,0,.4);
+  }
+
+  .matrix-scroll{overflow:visible; border-radius:12px;}
+  table.matrix{border-collapse:separate; border-spacing:2px; width:100%; min-width:0; table-layout:fixed;}
+  table.matrix th, table.matrix td{text-align:center; font-family:var(--font-mono);}
+
+  table.matrix th.group-label{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+    color:var(--doubler); padding:2px 0 7px;
+  }
+  table.matrix th.corner-blank{background:transparent;}
+  table.matrix th.away-col{
+    font-size:12.5px; color:var(--ink); font-weight:700; padding:6px 1px;
+    background:var(--surface-2); border-radius:6px;
+  }
+  table.matrix th.away-row{
+    font-size:12.5px; color:var(--ink); font-weight:700; padding:0 6px;
+    background:var(--surface-2); border-radius:6px;
+  }
+  table.matrix th.taker-label{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+    color:var(--taker); writing-mode:vertical-rl; transform:rotate(180deg);
+    padding:6px 0px; white-space:nowrap;
+  }
+
+  table.matrix td{
+    font-size:13.5px; font-weight:600; padding:10px 1px; border-radius:7px;
+    background:var(--surface-2); color:var(--ink);
+  }
+  table.matrix td .word{font-size:9.5px; font-weight:700; letter-spacing:-.2px;}
+  table.matrix td.na{background:transparent; color:#4a4030;}
+  table.matrix td{cursor:pointer;}
+  table.matrix td{position:relative; transition:transform .12s ease, box-shadow .12s ease;}
+  table.matrix td.selected{
+    transform:scale(1.08); z-index:3; font-weight:800;
+    box-shadow:0 0 0 1.5px #1b1712, 0 0 0 3.5px var(--brass), 0 4px 10px rgba(0,0,0,.5);
+  }
+  table.matrix th.away-col.sel{color:var(--doubler); font-weight:800;}
+  table.matrix th.away-row.sel{color:var(--taker); font-weight:800;}
+
+  .selected-detail{
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--edge);
+    font-family:var(--font-mono);
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px;
+    font-size:11px; color:var(--ink-dim);
+  }
+  .selected-detail .sep{color:var(--edge);}
+  .selected-detail span{color:var(--brass); font-weight:700;}
+  .selected-detail b{color:var(--ink); font-weight:600;}
+
+  .notes{font-size:12px; color:var(--ink-dim); line-height:1.6; margin-top:14px; padding-left:18px;}
+  .notes li{margin-bottom:4px;}
+
+
+  /* ===== Design B : clean modern ===== */
+  :root{ --taker:#c3c8d0; }
+  header{margin-bottom:12px; text-align:center;}
+  h1{font-family:var(--font-mono); font-weight:600; font-size:18px; letter-spacing:.2em; text-transform:uppercase; line-height:1.1;}
+  h1 .sl{color:var(--brass);}
+  header::after{content:""; display:block; height:1px; width:70%; margin:8px auto 0;
+    background:linear-gradient(90deg,transparent,var(--brass),transparent);}
+  .player-card{background:transparent; border:none; border-top:none; padding:4px 2px 0; border-radius:0;}
+  .player-header{align-items:center; flex-wrap:nowrap; margin-bottom:0;}
+  .player-card h2{font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim);}
+  .player-card h2::before{content:"\25CF\00a0"; color:var(--role-color);}
+  .gam-label b{font-family:var(--font-mono); font-size:30px; font-weight:300; color:var(--role-color); line-height:1;}
+  input.gam-slider{height:34px;}
+  input.gam-slider::-webkit-slider-runnable-track{
+    height:12px; border-radius:6px; box-shadow:none;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--role-color) 25%, #1b1712), var(--role-color) var(--fill,6px), var(--surface-2) var(--fill,6px));
+  }
+  input.gam-slider::-webkit-slider-thumb{
+    width:12px; height:30px; margin-top:-9px; border-radius:4px; border:none;
+    background:#efe7d6; box-shadow:0 2px 6px rgba(0,0,0,.6);
+  }
+  input.gam-slider::-moz-range-track{
+    height:12px; border-radius:6px; box-shadow:none;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--role-color) 25%, #1b1712), var(--role-color) var(--fill,6px), var(--surface-2) var(--fill,6px));
+  }
+  input.gam-slider::-moz-range-thumb{width:12px; height:30px; border-radius:4px; border:none; background:#efe7d6; box-shadow:0 2px 6px rgba(0,0,0,.6);}
+
+  table.matrix th.away-col.sel{background:rgba(201,162,39,.16);}
+  table.matrix th.away-row.sel{background:rgba(195,200,208,.16);}
+
+  .gam-label b{font-size:23px;}
+  .players{border:1px solid var(--edge); border-radius:14px; padding:6px 12px 4px; background:rgba(255,255,255,.015);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Take<span class="sl">/</span>Pass</h1>
+  </header>
+
+  <div class="top-row">
+  <div class="players">
+    <div class="player-card doubler">
+      <div class="player-header">
+        <h2>Doubler&rsquo;s Gammon chances</h2>
+        <span class="gam-label"><b id="gamDoublerVal">15%</b></span>
+      </div>
+      <input type="range" class="gam-slider" id="gamDoublerInput" min="0" max="50" step="1" value="15" aria-label="Doubler gammon percentage">
+    </div>
+
+    <div class="player-card taker">
+      <div class="player-header">
+        <h2>Taker&rsquo;s Gammon chances</h2>
+        <span class="gam-label"><b id="gamTakerVal">15%</b></span>
+      </div>
+      <input type="range" class="gam-slider" id="gamTakerInput" min="0" max="50" step="1" value="15" aria-label="Taker gammon percentage">
+    </div>
+  </div>
+
+  <section class="card cube-card">
+    <div class="cube-content">
+      <div class="cube-title">
+        <h2>Cube</h2>
+      </div>
+      <div class="cube-row">
+        <div class="cube-face active" data-cube="2">2</div>
+        <div class="cube-face" data-cube="4">4</div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <section class="card card-matrix">
+    <h2>Take Point <span class="h2-sub">(away score, 2 to 7)</span></h2>
+    <div class="matrix-scroll">
+      <table class="matrix" id="matrixTable"></table>
+    </div>
+    <div class="selected-detail" id="selectedDetail">
+      <span id="selScoreLabel">7 away / 7 away</span>
+      <span class="sep">·</span>TP(long race) <b id="selTP">–</b>
+      <span class="sep">·</span>GV(Doubler) <b id="selGVd">–</b>
+      <span class="sep">·</span>GV(Taker) <b id="selGVt">–</b>
+    </div>
+  </section>
+
+  <p class="formula">GAW = TP(long race) + GV(doubler)&nbsp;×&nbsp;Gam%(doubler) − GV(taker)&nbsp;×&nbsp;Gam%(taker)</p>
+</div>
+
+<script>
+const TABLES = {"TP": {"2": {"2": {"2": 0.325, "3": 0.26, "4": 0.2, "5": 0.175, "6": 0.225, "7": 0.22}, "3": {"2": 0.25, "3": 0.25, "4": 0.215, "5": 0.195, "6": 0.225, "7": 0.23}, "4": {"2": 0.185, "3": 0.24, "4": 0.22, "5": 0.195, "6": 0.23, "7": 0.225}, "5": {"2": 0.235, "3": 0.215, "4": 0.24, "5": 0.2, "6": 0.23, "7": 0.225}, "6": {"2": 0.225, "3": 0.22, "4": 0.245, "5": 0.2, "6": 0.23, "7": 0.22}, "7": {"2": 0.23, "3": 0.195, "4": 0.25, "5": 0.2, "6": 0.23, "7": 0.215}}, "4": {"2": {"2": null, "3": null, "4": null, "5": null, "6": null, "7": null}, "3": {"2": null, "3": 0.25, "4": 0.4, "5": 0.33, "6": 0.29, "7": 0.3}, "4": {"2": null, "3": 0.19, "4": 0.33, "5": 0.3, "6": 0.25, "7": 0.26}, "5": {"2": null, "3": 0.16, "4": 0.26, "5": 0.25, "6": 0.25, "7": 0.25}, "6": {"2": null, "3": 0.11, "4": 0.2, "5": 0.22, "6": 0.23, "7": 0.24}, "7": {"2": null, "3": 0.09, "4": 0.16, "5": 0.18, "6": 0.2, "7": 0.22}}}, "GV": {"2": {"2": {"2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0}, "3": {"2": 0.48, "3": 0.5, "4": 0.45, "5": 0.46, "6": 0.36, "7": 0.36}, "4": {"2": 1, "3": 0.97, "4": 0.98, "5": 0.81, "6": 0.67, "7": 0.6}, "5": {"2": 0.69, "3": 0.73, "4": 0.77, "5": 0.66, "6": 0.61, "7": 0.55}, "6": {"2": 0.51, "3": 0.54, "4": 0.56, "5": 0.58, "6": 0.55, "7": 0.54}, "7": {"2": 0.56, "3": 0.57, "4": 0.56, "5": 0.57, "6": 0.55, "7": 0.54}}, "4": {"2": {"2": null, "3": null, "4": null, "5": null, "6": null, "7": null}, "3": {"2": null, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0}, "4": {"2": null, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0}, "5": {"2": null, "3": 0.33, "4": 0.23, "5": 0.23, "6": 0.18, "7": 0.17}, "6": {"2": null, "3": 0.67, "4": 0.5, "5": 0.41, "6": 0.34, "7": 0.29}, "7": {"2": null, "3": 1, "4": 0.75, "5": 0.63, "6": 0.52, "7": 0.45}}}};
+
+const AWAY = [2,3,4,5,6,7];
+
+const gamDoublerInput = document.getElementById('gamDoublerInput');
+const gamTakerInput = document.getElementById('gamTakerInput');
+const gamDoublerVal = document.getElementById('gamDoublerVal');
+const gamTakerVal = document.getElementById('gamTakerVal');
+
+const segButtons = document.querySelectorAll('.cube-face');
+const table = document.getElementById('matrixTable');
+const selScoreLabel = document.getElementById('selScoreLabel');
+const selTP = document.getElementById('selTP');
+const selGVd = document.getElementById('selGVd');
+const selGVt = document.getElementById('selGVt');
+
+let cube = 2;
+let gamD = 15;   // doubler gammon %
+let gamT = 15;   // taker gammon %
+let selTa = 7;   // selected cell: taker away
+let selDa = 7;   // selected cell: doubler away
+
+function clampAway(a){ return Math.max(2, Math.min(7, a)); }
+
+function gawFor(cube, takerAway, doublerAway, gammonDoubler, gammonTaker){
+  const ta = clampAway(takerAway), da = clampAway(doublerAway);
+  const tp = TABLES.TP[cube][String(ta)][String(da)];
+  const gvDoubler = TABLES.GV[cube][String(da)][String(ta)];
+  const gvTaker = TABLES.GV[cube][String(ta)][String(da)];
+  if (tp === null || gvDoubler === null || gvTaker === null) return null;
+  return tp + gvDoubler * gammonDoubler - gvTaker * gammonTaker;
+}
+
+function buildTable(){
+  let html = '<colgroup><col style="width:18px"><col style="width:30px">' + AWAY.map(() => '<col>').join('') + '</colgroup>';
+  html += '<thead>';
+  html += '<tr><th class="corner-blank" rowspan="2" colspan="2"></th><th class="group-label" colspan="' + AWAY.length + '">Doubler</th></tr>';
+  html += '<tr>';
+  AWAY.forEach(da => html += `<th class="away-col" data-col="${da}">${da}</th>`);
+  html += '</tr></thead><tbody>';
+  AWAY.forEach((ta, i) => {
+    html += '<tr>';
+    if (i === 0){
+      html += `<th class="taker-label" rowspan="${AWAY.length}">Taker</th>`;
+    }
+    html += `<th class="away-row" data-row="${ta}">${ta}</th>`;
+    AWAY.forEach(da => {
+      html += `<td id="cell-${ta}-${da}" class="na" data-ta="${ta}" data-da="${da}">–</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+
+  table.querySelectorAll('td[data-ta]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      selTa = parseInt(cell.dataset.ta, 10);
+      selDa = parseInt(cell.dataset.da, 10);
+      update();
+    });
+  });
+}
+
+// ---- Sliders ----
+function setFill(input){
+  const min = parseFloat(input.min), max = parseFloat(input.max), val = parseFloat(input.value);
+  const frac = (val - min) / (max - min);
+  // keep the coloured part aligned with the centre of the 12px thumb
+  input.style.setProperty('--fill', `calc(6px + (100% - 12px) * ${frac})`);
+}
+
+function render(){
+  gamD = parseInt(gamDoublerInput.value, 10);
+  gamT = parseInt(gamTakerInput.value, 10);
+  gamDoublerVal.textContent = gamD + '%';
+  gamTakerVal.textContent = gamT + '%';
+  setFill(gamDoublerInput);
+  setFill(gamTakerInput);
+  update();
+}
+
+gamDoublerInput.addEventListener('input', render);
+gamTakerInput.addEventListener('input', render);
+
+// ---- Colour scale: very dark green (very low) -> white (21.5%) -> yellow -> orange -> red (very high) ----
+const SCALE_STOPS = [
+  [0.000, [  0,  70,  35]],   // very dark green
+  [0.100, [ 46, 160,  90]],   // green
+  [0.215, [255, 255, 255]],   // white
+  [0.310, [250, 214,  70]],   // yellow
+  [0.400, [240, 140,  40]],   // orange
+  [0.500, [208,  44,  44]]    // red
+];
+
+function mixRGB(a, b, t){
+  return a.map((v, i) => Math.round(v + (b[i] - v) * t));
+}
+
+function gawColor(g){
+  const first = SCALE_STOPS[0], last = SCALE_STOPS[SCALE_STOPS.length - 1];
+  let rgb;
+  if (g <= first[0]) rgb = first[1];
+  else if (g >= last[0]) rgb = last[1];
+  else {
+    for (let i = 1; i < SCALE_STOPS.length; i++){
+      const [g1, c1] = SCALE_STOPS[i];
+      if (g <= g1){
+        const [g0, c0] = SCALE_STOPS[i - 1];
+        rgb = mixRGB(c0, c1, (g - g0) / (g1 - g0));
+        break;
+      }
+    }
+  }
+  const lum = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]) / 255;
+  return { bg: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`, fg: lum > 0.55 ? '#1b1712' : '#ffffff' };
+}
+
+function update(){
+  const gD = gamD / 100;
+  const gT = gamT / 100;
+
+  AWAY.forEach(ta => {
+    AWAY.forEach(da => {
+      const cell = document.getElementById(`cell-${ta}-${da}`);
+      const gaw = gawFor(cube, ta, da, gD, gT);
+      let cls;
+      if (gaw === null){
+        cls = 'na';
+        cell.textContent = '–';
+        cell.style.background = '';
+        cell.style.color = '';
+      } else {
+        cls = '';
+        if (gaw < gT){
+          cell.innerHTML = '<span class="word">Always</span>';
+          cell.style.background = 'rgb(0,70,35)';
+          cell.style.color = '#fff';
+        } else if (gaw > 1 - gD){
+          cell.innerHTML = '<span class="word">Never</span>';
+          cell.style.background = 'rgb(208,44,44)';
+          cell.style.color = '#fff';
+        } else {
+          cell.textContent = Math.max(0, Math.round(gaw*100 + 1e-9)) + '%';
+          const c = gawColor(gaw);
+          cell.style.background = c.bg;
+          cell.style.color = c.fg;
+        }
+      }
+      if (ta === selTa && da === selDa) cls += ' selected';
+      cell.className = cls.trim();
+    });
+  });
+
+  table.querySelectorAll('th.away-col').forEach(th => th.classList.toggle('sel', parseInt(th.dataset.col, 10) === selDa));
+  table.querySelectorAll('th.away-row').forEach(th => th.classList.toggle('sel', parseInt(th.dataset.row, 10) === selTa));
+
+  updateSelectedDetail();
+}
+
+function updateSelectedDetail(){
+  selScoreLabel.textContent = selTa + 'away/' + selDa + 'away';
+  const ta = clampAway(selTa), da = clampAway(selDa);
+  const tp = TABLES.TP[cube][String(ta)][String(da)];
+  const gvD = TABLES.GV[cube][String(da)][String(ta)];
+  const gvT = TABLES.GV[cube][String(ta)][String(da)];
+  selTP.textContent = tp === null ? '–' : (tp*100).toFixed(1) + '%';
+  selGVd.textContent = gvD === null ? '–' : gvD;
+  selGVt.textContent = gvT === null ? '–' : gvT;
+}
+
+segButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    segButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    cube = parseInt(btn.dataset.cube, 10);
+    update();
+  });
+});
+
+buildTable();
+render();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+</body>
+</html>
